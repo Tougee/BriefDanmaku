@@ -24,7 +24,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.send_10).setOnClickListener(this);
         findViewById(R.id.start).setOnClickListener(this);
         findViewById(R.id.stop).setOnClickListener(this);
+    }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        danmakuView.finish();
     }
 
     @Override

@@ -20,12 +20,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DanmakuView extends View {
     private static final String TAG = "DanmakuView";
+    public static final int DEFAULT_MAX_RUNNING_COUNT = 20;
 
     private AtomicInteger mSequenceGenerator = new AtomicInteger();
 
-    private Context mContext;
     private Status mStatus = Status.PENDING;
     private int mMaxLines;
+    private int mMaxRunningCount = DEFAULT_MAX_RUNNING_COUNT;
 
     private SparseArray<Deque<DanmakuItem>> mRunningLines;
     private final BlockingQueue<DanmakuItem> mCacheQueue = new PriorityBlockingQueue<>();
@@ -39,7 +40,6 @@ public class DanmakuView extends View {
 
     public DanmakuView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        mContext = context;
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.DanmakuView, 0, 0);
         mMaxLines = ta.getInteger(R.styleable.DanmakuView_max_lines, 1);
         ta.recycle();

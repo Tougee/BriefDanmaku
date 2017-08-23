@@ -11,11 +11,15 @@ import android.text.SpannableString;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 
+import java.util.Random;
+
 public class DanmakuItem implements Comparable<DanmakuItem> {
 
     private static final int DEFAULT_TEXT_COLOR = Color.WHITE;
     private static final int DEFAULT_TEXT_SIZE = 15;
     private static final int DEFAULT_SPEED = 5;
+    private static final int DEFAULT_MAX_GAP = 60;
+    private static final int DEFAULT_MIN_GAP = 10;
 
     private Context mContext;
     private Integer mSequence;
@@ -25,10 +29,12 @@ public class DanmakuItem implements Comparable<DanmakuItem> {
     private int mTextColor;
     private int mTextSize;
     private long mTime;
-
     private int mWidth;
     private int mHeight;
     private StaticLayout mTextStaticLayout;
+    private Random mRandom = new Random();
+    private int mMaxHorizontalGap;
+    private int mMinHorizontalGap;
 
     public DanmakuItem(Context context, SpannableString text, long time, int offsetX) {
         this(context, text, time, offsetX, DEFAULT_TEXT_COLOR, DEFAULT_TEXT_SIZE);
@@ -41,6 +47,8 @@ public class DanmakuItem implements Comparable<DanmakuItem> {
         mOffsetX = offsetX;
         mTextColor = textColor;
         setTextSize(textSize);
+        mMaxHorizontalGap = dip2px(context, DEFAULT_MAX_GAP);
+        mMinHorizontalGap = dip2px(context, DEFAULT_MIN_GAP);
         initText();
     }
 
@@ -57,7 +65,7 @@ public class DanmakuItem implements Comparable<DanmakuItem> {
                 0,
                 false
         );
-        mWidth = mTextStaticLayout.getWidth();
+        mWidth = mTextStaticLayout.getWidth() + dip2px(mContext, randomGap());
         mHeight = (int) tp.getFontSpacing();
     }
 
@@ -120,6 +128,14 @@ public class DanmakuItem implements Comparable<DanmakuItem> {
     private static int dip2px(Context context, float dipValue) {
         final float scale = context.getResources().getDisplayMetrics().density;
         return (int) (dipValue * scale + 0.5f);
+    }
+
+    private int randomGap() {
+        int gap = mRandom.nextInt(mMaxHorizontalGap);
+        while (gap < mMinHorizontalGap) {
+            gap = mRandom.nextInt(mMaxHorizontalGap);
+        }
+        return gap;
     }
 
     @Override
