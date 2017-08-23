@@ -20,13 +20,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DanmakuView extends View {
     private static final String TAG = "DanmakuView";
-    public static final int DEFAULT_MAX_RUNNING_COUNT = 20;
+    public static final float MAX_RUNNING_COUNT_FACTOR = 1.5f;
 
     private AtomicInteger mSequenceGenerator = new AtomicInteger();
 
     private Status mStatus = Status.PENDING;
     private int mMaxLines;
-    private int mMaxRunningCount = DEFAULT_MAX_RUNNING_COUNT;
 
     private SparseArray<Deque<DanmakuItem>> mRunningLines;
     private final BlockingQueue<DanmakuItem> mCacheQueue = new PriorityBlockingQueue<>();
@@ -47,11 +46,12 @@ public class DanmakuView extends View {
         setBackgroundColor(Color.TRANSPARENT);
         setDrawingCacheBackgroundColor(Color.TRANSPARENT);
 
+        int maxRunningCount = (int) (mMaxLines * MAX_RUNNING_COUNT_FACTOR);
         mRunningLines = new SparseArray<>(mMaxLines);
         for (int i = 0; i < mMaxLines; i++) {
             mRunningLines.put(i, new LinkedList<DanmakuItem>());
         }
-        mCacheDispatcher = new CacheDispatcher(mCacheQueue, mRunningLines);
+        mCacheDispatcher = new CacheDispatcher(mCacheQueue, mRunningLines, maxRunningCount);
         mCacheDispatcher.start();
     }
 
@@ -79,6 +79,7 @@ public class DanmakuView extends View {
                     invalidate();
                 }
             } catch (ConcurrentModificationException e) {
+                // Ignore exceptions, continue invalidate.
                 invalidate();
             }
 
