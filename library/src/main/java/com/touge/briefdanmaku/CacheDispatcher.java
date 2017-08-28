@@ -1,6 +1,7 @@
 package com.touge.briefdanmaku;
 
 import android.os.Process;
+import android.util.Log;
 import android.util.SparseArray;
 
 import java.util.Deque;
@@ -59,6 +60,7 @@ public class CacheDispatcher extends Thread {
                     }
                 }
                 if (resultLine != -1 && totalCount < mMaxRunningCount) {
+                    Log.d("@@@", "add target line:" + resultLine + ", totalCount:" + totalCount);
                     target.setLine(resultLine);
                     mRunningLines.get(resultLine).add(target);
                 } else {

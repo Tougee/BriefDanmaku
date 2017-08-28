@@ -2,46 +2,43 @@ package com.touge.briefdanmaku;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
+import android.graphics.PixelFormat;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.SparseArray;
-import android.view.View;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 
-import java.util.ConcurrentModificationException;
 import java.util.Deque;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class DanmakuView extends View {
+public class DanmakuSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
     private static final String TAG = "DanmakuView";
     public static final float MAX_RUNNING_COUNT_FACTOR = 1.5f;
 
     private AtomicInteger mSequenceGenerator = new AtomicInteger();
-
-    private Status mStatus = Status.PENDING;
     private int mMaxLines;
 
     private SparseArray<Deque<DanmakuItem>> mRunningLines;
     private final BlockingQueue<DanmakuItem> mCacheQueue = new PriorityBlockingQueue<>();
     private CacheDispatcher mCacheDispatcher;
+    private DrawHelper mDrawHelper;
 
-    public enum Status {
-        PENDING,
-        RUNNING,
-        FINISHED
-    }
+    private SurfaceHolder mSurfaceHolder;
 
-    public DanmakuView(Context context, @Nullable AttributeSet attrs) {
+    public DanmakuSurfaceView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.DanmakuView, 0, 0);
         mMaxLines = ta.getInteger(R.styleable.DanmakuView_max_lines, 1);
         ta.recycle();
+
+        mSurfaceHolder = getHolder();
+        mSurfaceHolder.addCallback(this);
+        mSurfaceHolder.setFormat(PixelFormat.TRANSPARENT);
 
         setBackgroundColor(Color.TRANSPARENT);
         setDrawingCacheBackgroundColor(Color.TRANSPARENT);
@@ -55,60 +52,46 @@ public class DanmakuView extends View {
         mCacheDispatcher.start();
     }
 
-    @Override
-    protected void onDraw(Canvas canvas) {
-        if (mStatus == Status.RUNNING) {
-            try {
-                // drawSurface running items
-                int emptyLineCount = 0;
-                for (int i = 0; i < mRunningLines.size(); i++) {
-                    Deque<DanmakuItem> line = mRunningLines.get(i);
-                    if (line.isEmpty()) {
-                        emptyLineCount++;
-                    }
-                    for (Iterator<DanmakuItem> iterator = line.iterator(); iterator.hasNext(); ) {
-                        DanmakuItem item = iterator.next();
-                        if (item.inVisible()) {
-                            iterator.remove();
-                        } else {
-                            item.drawInternal(canvas);
-                        }
-                    }
-                }
-                if (emptyLineCount != mRunningLines.size()) {
-                    invalidate();
-                }
-            } catch (ConcurrentModificationException e) {
-                // Ignore exceptions, continue invalidate.
-                invalidate();
-            }
 
-        } else {
-            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-        }
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        mDrawHelper = new DrawHelper(holder, mRunningLines);
+        mDrawHelper.start();
+//        Canvas canvas = holder.lockCanvas();
+//        if (canvas == null) {
+//            return;
+//        }
+//        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+//        holder.unlockCanvasAndPost(canvas);
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        mSurfaceHolder.removeCallback(this);
     }
 
     public void start() {
-        mStatus = Status.RUNNING;
-        invalidate();
+        mDrawHelper.setStatus(DrawHelper.Status.RUNNING);
     }
 
     public void stop() {
-        mStatus = Status.PENDING;
-        invalidate();
+        mDrawHelper.setStatus(DrawHelper.Status.PENDING);
     }
 
     public void finish() {
-        mStatus = Status.FINISHED;
+        mDrawHelper.setStatus(DrawHelper.Status.FINISHED);
         release();
         if (mCacheDispatcher != null) {
             mCacheDispatcher.quit();
         }
-        invalidate();
-    }
-
-    public boolean isPaused() {
-        return mStatus == Status.PENDING;
+        if (mDrawHelper != null) {
+            mDrawHelper.quit();
+        }
     }
 
     private void release() {

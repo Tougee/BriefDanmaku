@@ -6,13 +6,14 @@ import android.text.SpannableString;
 import android.view.View;
 
 import com.touge.briefdanmaku.DanmakuItem;
+import com.touge.briefdanmaku.DanmakuSurfaceView;
 import com.touge.briefdanmaku.DanmakuView;
 
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private DanmakuView danmakuView;
+    private DanmakuSurfaceView danmakuView;
     private int count;
 
     @Override
@@ -20,7 +21,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        danmakuView = (DanmakuView) findViewById(R.id.danmaku);
+        danmakuView = (DanmakuSurfaceView) findViewById(R.id.danmaku);
         findViewById(R.id.send_10).setOnClickListener(this);
         findViewById(R.id.start).setOnClickListener(this);
         findViewById(R.id.stop).setOnClickListener(this);
